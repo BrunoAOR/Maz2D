@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cmath>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -55,14 +56,16 @@ int main()
 		return -1;
 	}
 
-	unsigned int shader = getShaderProgramId();
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+
 	unsigned int triangle = getTriangleVao();
 	unsigned int tlQuad = getTopLeftQuadVao();
 	unsigned int trQuad = getTopRightQuadVao();
 	unsigned int trisLine = getBottomTriangleLine();
 
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
+	unsigned int shader = getShaderProgramId();
+	int shaderColorLocation = glGetUniformLocation(shader, "inColor");
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -72,6 +75,10 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shader);
+		float time = glfwGetTime();
+		float changingValue = (sin(time) / 2.0f) + 0.5f;
+		glUniform4f(shaderColorLocation, 0.0f, changingValue, 0.0f, 1.0f);
+
 		glBindVertexArray(triangle);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 		glBindVertexArray(GL_NONE);
@@ -293,11 +300,12 @@ const char* getFragmentShaderSource()
 {
 	return
 		"#version 330 core\n"
+		"uniform vec4 inColor;"
 		"out vec4 outColor;"
 		"void main()"
 		""
 		"{"
-		"	outColor = vec4(0.5f, 1.0f, 0.2f, 1.0f);"
+		"	outColor = inColor;"
 		"}"
 		"";
 }
