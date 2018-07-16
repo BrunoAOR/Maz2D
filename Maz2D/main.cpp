@@ -16,6 +16,7 @@ unsigned int getTriangleVao();
 unsigned int getTopLeftQuadVao();
 unsigned int getTopRightQuadVao();
 unsigned int getQuadVao(float vertices[], unsigned int verticesSize);
+unsigned int getBottomTriangleLine();
 const char* getVertexShaderSource();
 const char* getFragmentShaderSource();
 unsigned int compileShader(GLenum shaderType, const char* source);
@@ -58,6 +59,10 @@ int main()
 	unsigned int triangle = getTriangleVao();
 	unsigned int tlQuad = getTopLeftQuadVao();
 	unsigned int trQuad = getTopRightQuadVao();
+	unsigned int trisLine = getBottomTriangleLine();
+
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -80,6 +85,10 @@ int main()
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(GL_NONE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		glBindVertexArray(trisLine);
+		glDrawElements(GL_TRIANGLES, 15, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(GL_NONE);
 
 		glUseProgram(GL_NONE);
 
@@ -201,6 +210,56 @@ unsigned int getQuadVao(float vertices[], unsigned int verticesSize)
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	glBindVertexArray(GL_NONE);
+	// Note that the EBO must be un-bound AFTER the VAO is unbound.
+	// This is done because the VAO registers the EBO that is bound while it (the VAO) is bound
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_NONE);
+
+	return vao;
+}
+
+unsigned int getBottomTriangleLine()
+{
+	float vertices[] = {
+		-1.0f, -1.0f, 0.0f,	// BL
+		-0.6f, -1.0f, 0.0f,	// B
+		-0.8f, -0.5f, 0.0f,	// T
+		-0.2f, -1.0f, 0.0f,	// B
+		-0.4f, -0.5f, 0.0f,	// T
+		 0.2f, -1.0f, 0.0f,	// B
+		 0.0f, -0.5f, 0.0f,	// T
+		 0.6f, -1.0f, 0.0f,	// B
+		 0.4f, -0.5f, 0.0f,	// T
+		 1.0f, -1.0f, 0.0f,	// B
+		 0.8f, -0.5f, 0.0f,	// T
+	};
+
+	unsigned int indices[] = {
+		0, 1, 2,
+		1, 3, 4,
+		3, 5, 6,
+		5, 7, 8,
+		7, 9, 10
+	};
+
+	unsigned int vao;
+	unsigned int vbo;
+	unsigned int ebo;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+	glGenBuffers(1, &ebo);
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
