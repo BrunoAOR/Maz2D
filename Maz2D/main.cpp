@@ -1,17 +1,10 @@
-#include <stdio.h>
 #include <cmath>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#define LOGGER(format, ...) Logger(__FILE__, __LINE__, format, __VA_ARGS__);
-
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
+#include "globals.h"
 
 void onWindowSizeChanged(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
-
-void Logger(const char file[], int line, const char* format, ...);
 
 unsigned int getTriangleVao();
 unsigned int getTopLeftQuadVao();
@@ -38,7 +31,7 @@ int main()
 	// For Mac, the following is required:
 	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Maz2D", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME, NULL, NULL);
 	if (window == nullptr)
 	{
 		LOGGER("ERROR: Failed to create GLFW window");
@@ -75,7 +68,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shader);
-		float time = glfwGetTime();
+		float time = (float)glfwGetTime();
 		float changingValue = (sin(time) / 2.0f) + 0.5f;
 		glUniform4f(shaderColorLocation, 0.0f, changingValue, 0.0f, 1.0f);
 
@@ -108,6 +101,7 @@ int main()
 	return 0;
 }
 
+
 int CALLBACK WinMain(
 	HINSTANCE   hInstance,
 	HINSTANCE   hPrevInstance,
@@ -118,25 +112,13 @@ int CALLBACK WinMain(
 	return main();
 }
 
-void Logger(const char file[], int line, const char* format, ...)
-{
-	static char tmp_string[4096];
-	static char tmp_string2[4096];
-	static va_list ap;
-
-	/* Construct the string from variable arguments */
-	va_start(ap, format);
-	vsprintf_s(tmp_string, 4096, format, ap);
-	va_end(ap);
-	sprintf_s(tmp_string2, 4096, "%s - in %s(%i)\n", tmp_string, file, line);
-	OutputDebugString(tmp_string2);
-}
 
 void onWindowSizeChanged(GLFWwindow* window, int width, int height)
 {
 	LOGGER("INFO: Called: w: %i, h: %i", width, height);
 	glViewport(0, 0, width, height);
 }
+
 
 void processInput(GLFWwindow* window)
 {
@@ -174,6 +156,7 @@ unsigned int getTriangleVao()
 	return vao;
 }
 
+
 unsigned int getTopLeftQuadVao()
 {
 	float vertices[] = {
@@ -186,6 +169,7 @@ unsigned int getTopLeftQuadVao()
 	return getQuadVao(vertices, sizeof(vertices));
 }
 
+
 unsigned int getTopRightQuadVao()
 {
 	float vertices[] = {
@@ -197,6 +181,7 @@ unsigned int getTopRightQuadVao()
 
 	return getQuadVao(vertices, sizeof(vertices));
 }
+
 
 unsigned int getQuadVao(float vertices[], unsigned int verticesSize)
 {
@@ -231,6 +216,7 @@ unsigned int getQuadVao(float vertices[], unsigned int verticesSize)
 
 	return vao;
 }
+
 
 unsigned int getBottomTriangleLine()
 {
@@ -282,6 +268,7 @@ unsigned int getBottomTriangleLine()
 	return vao;
 }
 
+
 const char* getVertexShaderSource()
 {
 	return
@@ -309,6 +296,7 @@ const char* getFragmentShaderSource()
 		"}"
 		"";
 }
+
 
 unsigned int getShaderProgramId()
 {
@@ -340,6 +328,7 @@ unsigned int getShaderProgramId()
 	glDeleteShader(fragmentId);
 	return shaderProgram;
 }
+
 
 unsigned int compileShader(GLenum shaderType, const char* source)
 {
