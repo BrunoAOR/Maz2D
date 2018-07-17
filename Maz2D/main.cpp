@@ -1,6 +1,7 @@
 #include <cmath>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "ShaderProgram.h"
 #include "globals.h"
 
 void onWindowSizeChanged(GLFWwindow* window, int width, int height);
@@ -11,10 +12,6 @@ unsigned int getTopLeftQuadVao();
 unsigned int getTopRightQuadVao();
 unsigned int getQuadVao(float vertices[], unsigned int verticesSize);
 unsigned int getBottomTriangleLine();
-const char* getVertexShaderSource();
-const char* getFragmentShaderSource();
-unsigned int compileShader(GLenum shaderType, const char* source);
-unsigned int getShaderProgramId();
 
 
 int main()
@@ -52,13 +49,15 @@ int main()
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 
+
 	unsigned int triangle = getTriangleVao();
 	unsigned int tlQuad = getTopLeftQuadVao();
 	unsigned int trQuad = getTopRightQuadVao();
 	unsigned int trisLine = getBottomTriangleLine();
 
-	unsigned int shader = getShaderProgramId();
-	int shaderColorLocation = glGetUniformLocation(shader, "inColor");
+	ShaderProgram shaderProgram;
+	shaderProgram.createShaderProgram(DEFAULT_VERTEX_SHADER_PATH, DEFAULT_FRAGMENT_SHADER_PATH);
+	int shaderColorLocation = shaderProgram.getUniformLocation("inColor");
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -67,7 +66,7 @@ int main()
 		glClearColor(0.5f, 0.25f, 0.25f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shader);
+		shaderProgram.activate();
 		float time = (float)glfwGetTime();
 		float changingValue = (sin(time) / 2.0f) + 0.5f;
 		glUniform4f(shaderColorLocation, 0.0f, changingValue, 0.0f, 1.0f);
@@ -90,7 +89,7 @@ int main()
 		glDrawElements(GL_TRIANGLES, 15, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(GL_NONE);
 
-		glUseProgram(GL_NONE);
+		shaderProgram.deactivate();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -266,92 +265,4 @@ unsigned int getBottomTriangleLine()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_NONE);
 
 	return vao;
-}
-
-
-const char* getVertexShaderSource()
-{
-	return
-		"#version 330 core\n"
-		"layout (location = 0) in vec3 pos;"
-		""
-		"void main()"
-		"{"
-		"	gl_Position = vec4(pos, 1.0);"
-		"}"
-		"";
-}
-
-
-const char* getFragmentShaderSource()
-{
-	return
-		"#version 330 core\n"
-		"uniform vec4 inColor;"
-		"out vec4 outColor;"
-		"void main()"
-		""
-		"{"
-		"	outColor = inColor;"
-		"}"
-		"";
-}
-
-
-unsigned int getShaderProgramId()
-{
-	unsigned int vertexId = compileShader(GL_VERTEX_SHADER, getVertexShaderSource());
-	unsigned int fragmentId = compileShader(GL_FRAGMENT_SHADER, getFragmentShaderSource());
-
-	unsigned int shaderProgram = 0;
-	if (vertexId != 0 && fragmentId != 0)
-	{
-		shaderProgram = glCreateProgram();
-
-		glAttachShader(shaderProgram, vertexId);
-		glAttachShader(shaderProgram, fragmentId);
-		glLinkProgram(shaderProgram);
-
-		int success;
-		char errorLog[512];
-		glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-		if (!success)
-		{
-			glGetProgramInfoLog(shaderProgram, 512, NULL, errorLog);
-			LOGGER("ERROR: Shader program linking error: %s", errorLog);
-			glDeleteProgram(shaderProgram);
-			shaderProgram = 0;
-		}
-	}
-	
-	glDeleteShader(vertexId);
-	glDeleteShader(fragmentId);
-	return shaderProgram;
-}
-
-
-unsigned int compileShader(GLenum shaderType, const char* source)
-{
-	static const char* vertexCstr = "Vertex Shader";
-	static const char* fragmentCstr = "Fragment Shader";
-
-	unsigned int shaderId = glCreateShader(shaderType);
-	glShaderSource(shaderId, 1, &source, 0);
-	glCompileShader(shaderId);
-
-	int success;
-	char errorLog[512];
-	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		const char* shaderText = shaderType == GL_VERTEX_SHADER ? vertexCstr : (shaderType == GL_FRAGMENT_SHADER ? fragmentCstr : "Unknown shader type");
-		glGetShaderInfoLog(shaderId, 512, NULL, errorLog);
-		LOGGER("ERROR: Shader compilation (%s) error: %s", shaderText, errorLog);
-		glDeleteShader(shaderId);
-		return 0;
-	}
-	else
-	{
-		return shaderId;
-	}
 }
