@@ -21,6 +21,8 @@ Documentation about the ussage of Maz2D will be added to the wiki in due time.
 
 ### 3rd party libraries used
 3rd party libraries will be listed in this section as they get added to the project.
+* [GLFW 3.2.1](http://www.glfw.org/)
+* [GLAD](http://glad.dav1d.de/)
 
 
 ### License
