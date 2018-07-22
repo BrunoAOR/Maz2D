@@ -2,7 +2,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "ShaderProgram.h"
+#include "Texture.h"
 #include "globals.h"
+
 
 void onWindowSizeChanged(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -49,15 +51,22 @@ int main()
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 
+	// Setup DevIL
+	Texture::InitDevIL();
 
+	// Setup testing VAOs
 	unsigned int triangle = getTriangleVao();
 	unsigned int tlQuad = getTopLeftQuadVao();
 	unsigned int trQuad = getTopRightQuadVao();
 	unsigned int trisLine = getBottomTriangleLine();
 
+	Texture testTexture;
+	testTexture.loadTexture("assets/images/testTexture.png");
+	
 	ShaderProgram shaderProgram;
 	shaderProgram.createShaderProgram(DEFAULT_VERTEX_SHADER_PATH, DEFAULT_FRAGMENT_SHADER_PATH);
 	int shaderColorLocation = shaderProgram.getUniformLocation("inColor");
+	int useTextureLocation = shaderProgram.getUniformLocation("useTexture");
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -67,14 +76,13 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		shaderProgram.activate();
+		testTexture.bind();
+
 		float time = (float)glfwGetTime();
 		float changingValue = (sin(time) / 2.0f) + 0.5f;
 		glUniform4f(shaderColorLocation, 0.0f, changingValue, 0.0f, 1.0f);
 
-		glBindVertexArray(triangle);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		glBindVertexArray(GL_NONE);
-
+		glUniform1i(useTextureLocation, true);
 		glBindVertexArray(tlQuad);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(GL_NONE);
@@ -83,12 +91,18 @@ int main()
 		glBindVertexArray(trQuad);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(GL_NONE);
+
+		glUniform1i(useTextureLocation, false);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glBindVertexArray(triangle);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(GL_NONE);
 
 		glBindVertexArray(trisLine);
 		glDrawElements(GL_TRIANGLES, 15, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(GL_NONE);
 
+		testTexture.unbind();
 		shaderProgram.deactivate();
 
 		glfwSwapBuffers(window);
@@ -158,11 +172,12 @@ unsigned int getTriangleVao()
 
 unsigned int getTopLeftQuadVao()
 {
+	// x, y, z, u, v 
 	float vertices[] = {
-		-0.8f, 0.2f, 0.0f,	// bottom-left
-		-0.2f, 0.2f, 0.0f,	// bottom-right
-		-0.2f, 0.8f, 0.0f,	// top-right
-		-0.8f, 0.8f, 0.0f	// top-left
+		-0.8f, 0.2f, 0.0f, 0.0f, 0.0f,	// bottom-left
+		-0.2f, 0.2f, 0.0f, 1.0f, 0.0f,	// bottom-right
+		-0.2f, 0.8f, 0.0f, 1.0f, 1.0f,	// top-right
+		-0.8f, 0.8f, 0.0f, 0.0f, 1.0f	// top-left
 	};
 
 	return getQuadVao(vertices, sizeof(vertices));
@@ -172,10 +187,10 @@ unsigned int getTopLeftQuadVao()
 unsigned int getTopRightQuadVao()
 {
 	float vertices[] = {
-		0.2f, 0.2f, 0.0f,	// bottom-left
-		0.8f, 0.2f, 0.0f,	// bottom-right
-		0.8f, 0.8f, 0.0f,	// top-right
-		0.2f, 0.8f, 0.0f	// top-left
+		0.2f, 0.2f, 0.0f, 0.0f, 0.0f,	// bottom-left
+		0.8f, 0.2f, 0.0f, 1.0f, 0.0f,	// bottom-right
+		0.8f, 0.8f, 0.0f, 1.0f, 1.0f,	// top-right
+		0.2f, 0.8f, 0.0f, 0.0f, 1.0f	// top-left
 	};
 
 	return getQuadVao(vertices, sizeof(vertices));
@@ -201,8 +216,10 @@ unsigned int getQuadVao(float vertices[], unsigned int verticesSize)
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(0 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
