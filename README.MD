@@ -24,6 +24,7 @@ Documentation about the ussage of Maz2D will be added to the wiki in due time.
 * [GLFW 3.2.1](http://www.glfw.org/)
 * [GLAD](http://glad.dav1d.de/)
 * [DevIL 1.8.0](http://openil.sourceforge.net/)
+* [GLM 0.9.8.5](https://github.com/g-truc/glm)
 
 
 ### License

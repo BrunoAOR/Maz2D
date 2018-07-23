@@ -1,6 +1,9 @@
 #include <cmath>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "ShaderProgram.h"
 #include "Texture.h"
 #include "globals.h"
@@ -68,6 +71,27 @@ int main()
 	int shaderColorLocation = shaderProgram.getUniformLocation("inColor");
 	int useTextureLocation = shaderProgram.getUniformLocation("useTexture");
 
+	// Setup matrices
+	glm::mat4 projectionMatrix = glm::ortho(0.0f, (float)WINDOW_WIDTH, 0.0f, (float)WINDOW_HEIGHT, 0.1f, 10.0f);
+	//projectionMatrix = glm::perspective(glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
+	glm::mat4 viewMatrix = glm::mat4(1.0f);
+	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, -5.0f));
+	glm::mat4 modelMatrix = glm::mat4(1.0f);
+	modelMatrix= glm::translate(modelMatrix, glm::vec3(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f, 0.0f));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	modelMatrix = glm::scale(modelMatrix, glm::vec3(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f, 1.0f));
+	
+	int projectionLocation = shaderProgram.getUniformLocation("projectionMatrix");
+	int viewLocation = shaderProgram.getUniformLocation("viewMatrix");
+	int modelLocation = shaderProgram.getUniformLocation("modelMatrix");
+
+	shaderProgram.activate();
+	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+	shaderProgram.deactivate();
+
+
 	while (!glfwWindowShouldClose(window))
 	{
 		processInput(window);
@@ -128,7 +152,7 @@ int CALLBACK WinMain(
 
 void onWindowSizeChanged(GLFWwindow* window, int width, int height)
 {
-	LOGGER("INFO: Called: w: %i, h: %i", width, height);
+	LOGGER("INFO: Window resized to: w: %i, h: %i", width, height);
 	glViewport(0, 0, width, height);
 }
 
